@@ -200,7 +200,7 @@ func Sugar() *zap.SugaredLogger {
 }
 
 // InitLoggerDefault 使用默认配置
-func InitLoggerDefault() error {
+func InitDefault() error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("获取当前工作目录失败: %w", err)
@@ -226,26 +226,6 @@ func InitLoggerDefault() error {
 		return fmt.Errorf("日志系统初始化失败: %w", err)
 	}
 	return nil
-}
-
-// FromEnv 从环境变量初始化全局日志
-func InitFromEnv() error {
-	cfg := &LoggerConfig{
-		Level:      getEnv("LOG_LEVEL", "info"),
-		Output:     getEnv("LOG_OUTPUT", "both"),
-		Format:     getEnv("LOG_FORMAT", "console"),
-		FilePath:   getEnv("LOG_FILE_PATH", ""),
-		MaxSize:    getEnvInt("LOG_MAX_SIZE", 100),
-		MaxBackups: getEnvInt("LOG_MAX_BACKUPS", 10),
-		MaxAge:     getEnvInt("LOG_MAX_AGE", 30),
-		Compress:   getEnvBool("LOG_COMPRESS", true),
-		Sampling:   getEnvBool("LOG_SAMPLING", false),
-	}
-	if cfg.FilePath == "" {
-		wd, _ := os.Getwd()
-		cfg.FilePath = filepath.Join(wd, "logs", "app.log")
-	}
-	return InitLogger(cfg)
 }
 
 // 确保日志落盘

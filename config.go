@@ -3,7 +3,6 @@ package zlog
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 )
 
@@ -29,7 +28,7 @@ func (c *LoggerConfig) validate() error {
 	if c.MaxAge < 0 {
 		c.MaxAge = 30
 	}
-	if c.Output == "file" && c.FilePath == "" {
+	if (c.Output == "file" || c.Output == "both") && c.FilePath == "" {
 		return fmt.Errorf("FilePath is required when Output='file'")
 	}
 	return nil
@@ -61,12 +60,11 @@ func getEnvBool(key string, defaultValue bool) bool {
 }
 
 func defaultConfig() *LoggerConfig {
-	wd, _ := os.Getwd()
 	return &LoggerConfig{
 		Level:      "info",
-		Output:     "both",
+		Output:     "console",
 		Format:     "console",
-		FilePath:   filepath.Join(wd, "logs", "app.log"),
+		FilePath:   "",
 		MaxSize:    100, // MB
 		MaxBackups: 10,
 		MaxAge:     30, // days
