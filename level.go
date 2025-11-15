@@ -1,37 +1,67 @@
 package zlog
 
-import "go.uber.org/zap/zapcore"
+import (
+	"fmt"
+	"strings"
+
+	"go.uber.org/zap/zapcore"
+)
 
 // Level represents log level, hiding zapcore.Level internally
-type Level int
+type Level string
 
 const (
-	DebugLevel Level = iota
-	InfoLevel
-	WarnLevel
-	ErrorLevel
-	PanicLevel
-	FatalLevel
+	DebugLevel Level = "debug"
+	InfoLevel  Level = "info"
+	WarnLevel  Level = "warn"
+	ErrorLevel Level = "error"
+	PanicLevel Level = "panic"
+	FatalLevel Level = "fatal"
 )
 
 // String returns human-readable level name
 func (l Level) String() string {
+	return string(l)
+}
+
+// Valid checks if the level is one of the predefined valid levels.
+func (l Level) Valid() bool {
 	switch l {
-	case DebugLevel:
-		return "debug"
-	case InfoLevel:
-		return "info"
-	case WarnLevel:
-		return "warn"
-	case ErrorLevel:
-		return "error"
-	case PanicLevel:
-		return "panic"
-	case FatalLevel:
-		return "fatal"
+	case DebugLevel, InfoLevel, WarnLevel, ErrorLevel, PanicLevel, FatalLevel:
+		return true
 	default:
-		return "unknown"
+		return false
 	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler
+// Supports parsing from YAML, JSON, TOML, env vars, etc.
+func (l *Level) UnmarshalText(text []byte) error {
+	levelStr := strings.ToLower(string(text))
+	switch levelStr {
+	case "debug", "d":
+		*l = DebugLevel
+	case "info", "i":
+		*l = InfoLevel
+	case "warn", "warning", "w":
+		*l = WarnLevel
+	case "error", "err", "e":
+		*l = ErrorLevel
+	case "panic", "p":
+		*l = PanicLevel
+	case "fatal", "f":
+		*l = FatalLevel
+	default:
+		return fmt.Errorf("invalid log level: %q", string(text))
+	}
+	return nil
+}
+
+func (l Level) MarshalText() ([]byte, error) {
+	if !l.Valid() {
+		return []byte("info"), nil // safe default
+	}
+	return []byte(l), nil
 }
 
 // toZapCoreLevel converts to zapcore.Level (internal use)
