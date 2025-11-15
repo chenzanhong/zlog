@@ -153,7 +153,6 @@ func InitLogger(config LoggerConfig) error {
 		globalLogger, err = newLogger(config)
 		if err == nil {
 			globalSugaredLogger = globalLogger.Sugar()
-			globalLogger = globalLogger.WithOptions(zap.AddCallerSkip(1))
 		}
 	})
 	return err
@@ -166,7 +165,6 @@ func Logger() *zap.Logger {
 			cfg := DefaultConfig()
 			globalLogger, _ = newLogger(cfg)
 			globalSugaredLogger = globalLogger.Sugar()
-			globalLogger = globalLogger.WithOptions(zap.AddCallerSkip(1))
 		})
 	}
 	return globalLogger
