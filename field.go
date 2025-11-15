@@ -17,14 +17,14 @@ const (
 	fieldTime
 )
 
-// Field 是 zlog 自定义的日志字段类型，对外隐藏 zap.Field
+// Field is zlog's custom log field type, hiding zap.Field internally
 type Field struct {
 	key   string
 	value interface{}
 	typ   fieldType
 }
 
-// 构造函数
+// Constructor functions
 func String(key, val string) Field { return Field{key: key, value: val, typ: fieldString} }
 func Int(key string, val int) Field { return Field{key: key, value: val, typ: fieldInt} }
 func Int64(key string, val int64) Field { return Field{key: key, value: val, typ: fieldInt64} }

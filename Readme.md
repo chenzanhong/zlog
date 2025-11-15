@@ -31,14 +31,14 @@ import (
 )
 
 func main() {
-    // 使用默认配置初始化日志系统
+    // Initialize logging system with default configuration
     err := zlog.InitLoggerDefault()
     if err != nil {
         panic("初始化日志失败: " + err.Error())
     }
-    defer zlog.Sync() // 确保日志落盘
+    defer zlog.Sync() // Ensure logs are flushed to disk
     
-    // 使用日志
+    // Use logging
     zlog.Info("应用启动", zlog.String("version", "1.0.0"))
     zlog.Infow("用户登录", "username", "admin", "ip", "127.0.0.1")
     zlog.Infof("处理请求耗时: %v", 100*time.Millisecond)
@@ -54,15 +54,15 @@ import (
 
 func main() {
     config := &zlog.LoggerConfig{
-        Level:      "debug",          // 日志级别：debug, info, warn, error, panic, fatal
-        Output:     "both",           // 输出目标：console, file, both
-        Format:     "json",           // 控制台格式：json, console；文件强制 json
-        FilePath:   "./logs/app.log", // 日志文件路径
-        MaxSize:    100,              // 单个日志文件最大大小(MB)
-        MaxBackups: 10,               // 保留的最大日志文件数
-        MaxAge:     30,               // 保留的最大天数
-        Compress:   true,             // 是否压缩旧日志文件
-        Sampling:   false,            // 是否启用日志采样
+        Level:      "debug",          // Log level: debug, info, warn, error, panic, fatal
+        Output:     "both",           // Output target: console, file, both
+        Format:     "json",           // Console format: json, console; file is always json
+        FilePath:   "./logs/app.log", // Log file path
+        MaxSize:    100,              // Max size per log file (MB)
+        MaxBackups: 10,               // Max number of backup log files
+        MaxAge:     30,               // Max days to retain log files
+        Compress:   true,             // Whether to compress old log files
+        Sampling:   false,            // Whether to enable log sampling
     }
     
     err := zlog.InitLogger(config)
@@ -71,7 +71,7 @@ func main() {
     }
     defer zlog.Sync()
     
-    // 使用日志
+    // Use logging
     zlog.Debug("调试信息", zlog.Int("count", 10))
 }
 ```
@@ -99,15 +99,15 @@ func main() {
 结构化日志使用 `Field` 类型来记录键值对，性能更高，适合生产环境：
 
 ```go
-// 基本用法
+// Basic usage
 zlog.Debug("调试信息")
 zlog.Info("普通信息")
 zlog.Warn("警告信息")
 zlog.Error("错误信息")
-zlog.Panic("恐慌信息") // 会触发panic
-zlog.Fatal("致命错误") // 会导致程序退出
+zlog.Panic("panic message") // Will trigger panic
+zlog.Fatal("fatal error") // Will cause program exit
 
-// 带字段的用法
+// Usage with fields
 zlog.Info("用户登录成功", 
     zlog.String("username", "admin"),
     zlog.String("ip", "127.0.0.1"),
@@ -163,29 +163,29 @@ import (
     "github.com/chenzanhong/zlog"
 )
 
-// 自定义日志钩子
+// Custom log hooks
 type AlertHook struct{}
 
 func (h *AlertHook) OnLog(level zlog.Level, msg string, fields []zlog.Field) error {
-    // 例如：当错误级别日志出现时发送告警
+    // Example: Send alert when error level logs appear
     if level >= zlog.ErrorLevel {
-        // 发送告警的逻辑
+        // Alert sending logic
         // ...
     }
     return nil
 }
 
 func main() {
-    // 初始化日志
+    // Initialize logging
     err := zlog.InitLoggerDefault()
     if err != nil {
         panic(err)
     }
     
-    // 注册日志钩子
+    // Register log hook
     zlog.RegisterLogHook(&AlertHook{})
     
-    // 使用日志
+    // Use logging
     zlog.Error("这是一个错误", zlog.String("reason", "测试"))
 }
 ```
@@ -208,8 +208,8 @@ func main() {
 
 ## 依赖
 
-- [go.uber.org/zap](https://github.com/uber-go/zap)：高性能的日志库
-- [gopkg.in/natefinch/lumberjack.v2](https://github.com/natefinch/lumberjack)：日志文件轮转
+- [go.uber.org/zap](https://github.com/uber-go/zap)：High performance logging library
+- [gopkg.in/natefinch/lumberjack.v2](https://github.com/natefinch/lumberjack)：Log file rotation
 
 ## 注意事项
 

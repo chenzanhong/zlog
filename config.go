@@ -59,8 +59,8 @@ func getEnvBool(key string, defaultValue bool) bool {
 	return defaultValue
 }
 
-func defaultConfig() *LoggerConfig {
-	return &LoggerConfig{
+func defaultConfig() LoggerConfig {
+	return LoggerConfig{
 		Level:      InfoLevel,
 		Output:     "console",
 		Format:     "console",

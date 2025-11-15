@@ -21,7 +21,7 @@ func RegisterLogHook(hook LogHook) {
 	globalHooks = append(globalHooks, hook)
 }
 
-// executeHooks 在 logWithFields 中调用
+// executeHooks is called within logWithFields
 func executeHooks(zlogLevel Level, msg string, fields []Field) {
 	hooksMutex.RLock()
 	hooks := make([]LogHook, len(globalHooks))

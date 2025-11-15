@@ -12,27 +12,70 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-// 全局实例（兼容旧用法）
+// Global instances (for backward compatibility)
 var (
 	globalLogger *zap.Logger
 	globalSugar  *zap.SugaredLogger
 	once         sync.Once
 )
 
-// NewLogger 创建一个新的 Logger 实例
-func NewLogger(config *LoggerConfig) (*zap.Logger, error) {
-	// 创建日志目录
-	if config.FilePath != "" {
-		dir := filepath.Dir(config.FilePath)
+// NewLogger creates a new zap.Logger instance with automatic config validation,
+// default value filling, and path resolution.
+func NewLogger(config LoggerConfig) (*zap.Logger, error) {
+	cfg := config
+
+	// Normalize log level
+	if cfg.Level < DebugLevel || cfg.Level > FatalLevel {
+		cfg.Level = InfoLevel
+	}
+
+	// Normalize output destination
+	switch cfg.Output {
+	case "console", "file", "both":
+		// valid
+	default:
+		cfg.Output = "console"
+	}
+
+	// Normalize format
+	if cfg.Format != "json" && cfg.Format != "console" {
+		cfg.Format = "console"
+	}
+
+	// Validate file path when needed
+	if (cfg.Output == "file" || cfg.Output == "both") && cfg.FilePath == "" {
+		return nil, fmt.Errorf("file path is required when output is 'file' or 'both'")
+	}
+
+	// Apply reasonable defaults for rotation settings
+	if cfg.MaxSize <= 0 {
+		cfg.MaxSize = 100 // MB
+	}
+	if cfg.MaxBackups < 0 {
+		cfg.MaxBackups = 10
+	}
+	if cfg.MaxAge < 0 {
+		cfg.MaxAge = 30 // days
+	}
+
+	// Resolve relative file path to absolute
+	if cfg.FilePath != "" && !filepath.IsAbs(cfg.FilePath) {
+		wd, err := os.Getwd()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get working directory: %w", err)
+		}
+		cfg.FilePath = filepath.Join(wd, cfg.FilePath)
+	}
+
+	// Create log directory if needed
+	if cfg.FilePath != "" {
+		dir := filepath.Dir(cfg.FilePath)
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			return nil, fmt.Errorf("创建日志目录失败: %v", err)
+			return nil, fmt.Errorf("failed to create log directory %q: %w", dir, err)
 		}
 	}
 
-	// 设置日志级别
-	level := config.Level.toZapCoreLevel()
-
-	// 配置编码器
+	// 4. Build encoder config
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "ts",
 		LevelKey:       "level",
@@ -48,121 +91,70 @@ func NewLogger(config *LoggerConfig) (*zap.Logger, error) {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
-	// 创建输出核心
+	// 5. Build cores
 	var cores []zapcore.Core
+	zapLevel := cfg.Level.toZapCoreLevel()
 
-	// 根据output参数控制输出目的地，format参数控制终端输出格式
-	// 文件输出始终使用JSON格式
-	switch config.Output {
-	case "console":
-		// 仅控制台输出，根据format决定格式
-		var consoleEncoder zapcore.Encoder
-		consoleEncoderConfig := encoderConfig
-
-		if config.Format == "json" {
-			// 使用JSON格式输出到控制台
-			consoleEncoder = zapcore.NewJSONEncoder(consoleEncoderConfig)
+	// Console output
+	if cfg.Output == "console" || cfg.Output == "both" {
+		var enc zapcore.Encoder
+		consoleEncCfg := encoderConfig
+		if cfg.Format == "json" {
+			enc = zapcore.NewJSONEncoder(consoleEncCfg)
 		} else {
-			// 默认使用带颜色的控制台格式
-			consoleEncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-			consoleEncoder = zapcore.NewConsoleEncoder(consoleEncoderConfig)
+			consoleEncCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+			enc = zapcore.NewConsoleEncoder(consoleEncCfg)
 		}
-
-		consoleCore := zapcore.NewCore(consoleEncoder, zapcore.Lock(os.Stdout), level)
-		cores = append(cores, consoleCore)
-
-	case "file":
-		// 仅文件输出，强制使用JSON格式
-		if config.FilePath != "" {
-			writer := &lumberjack.Logger{
-				Filename:   config.FilePath,
-				MaxSize:    config.MaxSize,
-				MaxBackups: config.MaxBackups,
-				MaxAge:     config.MaxAge,
-				Compress:   config.Compress,
-			}
-			fileEncoder := zapcore.NewJSONEncoder(encoderConfig) // 文件始终使用JSON格式
-			fileCore := zapcore.NewCore(fileEncoder, zapcore.AddSync(writer), level)
-			cores = append(cores, fileCore)
-		} else {
-			return nil, fmt.Errorf("日志参数output值为file，但是未指定日志文件路径")
-		}
-
-	case "both":
-		fallthrough
-	default:
-		// 默认使用both模式：同时输出到文件和控制台
-		// 文件输出强制使用JSON格式
-		if config.FilePath != "" {
-			writer := &lumberjack.Logger{
-				Filename:   config.FilePath,
-				MaxSize:    config.MaxSize,
-				MaxBackups: config.MaxBackups,
-				MaxAge:     config.MaxAge,
-				Compress:   config.Compress,
-			}
-			fileEncoder := zapcore.NewJSONEncoder(encoderConfig) // 文件始终使用JSON格式
-			fileCore := zapcore.NewCore(fileEncoder, zapcore.AddSync(writer), level)
-			cores = append(cores, fileCore)
-		} else {
-			return nil, fmt.Errorf("日志参数output值为file，但是未指定日志文件路径")
-		}
-
-		// 控制台输出，根据format决定格式
-		var consoleEncoder zapcore.Encoder
-		consoleEncoderConfig := encoderConfig
-
-		if config.Format == "json" {
-			// 使用JSON格式输出到控制台
-			consoleEncoder = zapcore.NewJSONEncoder(consoleEncoderConfig)
-		} else {
-			// 默认使用带颜色的控制台格式
-			consoleEncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-			consoleEncoder = zapcore.NewConsoleEncoder(consoleEncoderConfig)
-		}
-
-		consoleCore := zapcore.NewCore(consoleEncoder, zapcore.Lock(os.Stdout), level)
-		cores = append(cores, consoleCore)
+		cores = append(cores, zapcore.NewCore(enc, zapcore.Lock(os.Stdout), zapLevel))
 	}
 
-	// 如果没有配置输出，报错
+	// File output (always JSON)
+	if cfg.Output == "file" || cfg.Output == "both" {
+		writer := &lumberjack.Logger{
+			Filename:   cfg.FilePath,
+			MaxSize:    cfg.MaxSize,
+			MaxBackups: cfg.MaxBackups,
+			MaxAge:     cfg.MaxAge,
+			Compress:   cfg.Compress,
+		}
+		enc := zapcore.NewJSONEncoder(encoderConfig)
+		cores = append(cores, zapcore.NewCore(enc, zapcore.AddSync(writer), zapLevel))
+	}
+
 	if len(cores) == 0 {
-		return nil, fmt.Errorf("未配置任何日志输出")
+		return nil, fmt.Errorf("no valid log output configured")
 	}
 
-	// 创建核心
+	// 6. Build logger
 	core := zapcore.NewTee(cores...)
-
-	// 创建日志选项
 	options := []zap.Option{
 		zap.AddCaller(),
-		zap.AddCallerSkip(0), // 设置为0以正确显示实际调用日志的文件
+		zap.AddCallerSkip(0),
 		zap.AddStacktrace(zapcore.ErrorLevel),
 		zap.ErrorOutput(zapcore.Lock(os.Stderr)),
 	}
 
-	// 添加采样
-	if config.Sampling {
+	if cfg.Sampling {
 		options = append(options, zap.WrapCore(func(core zapcore.Core) zapcore.Core {
 			return zapcore.NewSamplerWithOptions(core, time.Second, 100, 100)
 		}))
 	}
 
-	// 创建Logger
 	logger := zap.New(core, options...)
 
-	// 记录初始化日志
-	logger.Info("日志系统初始化完成",
-		zap.String("level", level.String()),
-		zap.String("output", config.Output),
-		zap.String("format", config.Format),
-		zap.String("file_path", config.FilePath),
+	// Optional: log initialization info (note: logger is already usable here)
+	logger.Info("Logger initialized",
+		zap.String("level", cfg.Level.String()),
+		zap.String("output", cfg.Output),
+		zap.String("format", cfg.Format),
+		zap.String("file_path", cfg.FilePath),
 	)
+
 	return logger, nil
 }
 
-// InitLogger 初始化全局日志（线程安全）
-func InitLogger(config *LoggerConfig) error {
+// InitLogger initializes global logger (thread-safe)
+func InitLogger(config LoggerConfig) error {
 	var err error
 	once.Do(func() {
 		globalLogger, err = NewLogger(config)
@@ -173,7 +165,7 @@ func InitLogger(config *LoggerConfig) error {
 	return err
 }
 
-// Logger 返回全局 zap.Logger
+// Logger returns global zap.Logger
 func Logger() *zap.Logger {
 	if globalLogger == nil {
 		once.Do(func() {
@@ -185,26 +177,27 @@ func Logger() *zap.Logger {
 	return globalLogger
 }
 
-// Sugar 返回全局 SugaredLogger
+// Sugar returns global SugaredLogger
 func Sugar() *zap.SugaredLogger {
-	_ = Logger() // 触发初始化
+	_ = Logger() // Trigger initialization
 	return globalSugar
 }
 
-// InitLoggerDefault 使用默认配置
+// InitDefault initializes with default configuration
 func InitDefault() error {
-	// 使用默认配置初始化
-	config := defaultConfig()
-
-	err := InitLogger(config)
-	if err != nil {
-		return fmt.Errorf("日志系统初始化失败: %w", err)
-	}
-	return nil
+	return InitLogger(defaultConfig())
 }
 
-// 确保日志落盘
+// MustInitDefault panics if default logger fails to initialize.
+// Useful in main() for fail-fast behavior.
+func MustInitDefault() {
+	if err := InitDefault(); err != nil {
+		panic(fmt.Sprintf("failed to init default logger: %v", err))
+	}
+}
+
+// Sync ensures logs are flushed to disk
 func Sync() error {
-	logger := Logger() // 触发默认初始化（如果还没初始化）
+	logger := Logger() // Trigger default initialization if not already initialized
 	return logger.Sync()
 }

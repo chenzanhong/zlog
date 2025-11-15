@@ -1,7 +1,7 @@
 package zlog
 
-// ========== 结构化日志（高性能，推荐生产环境使用）==========
-// 结构化日志函数：参数是 []zlog.Field
+// ========== Structured Logging (High Performance, Recommended for Production) ==========
+// Structured logging functions: parameters are []zlog.Field
 func Debug(msg string, fields ...Field) { logWithFields(DebugLevel, msg, fields) }
 func Info(msg string, fields ...Field)  { logWithFields(InfoLevel, msg, fields) }
 func Warn(msg string, fields ...Field)  { logWithFields(WarnLevel, msg, fields) }
@@ -30,7 +30,7 @@ func logWithFields(level Level, msg string, fields []Field) {
 	}
 }
 
-// ========== 键值对日志（易用，适合快速开发）==========
+// ========== Key-Value Logging (Easy to Use, Suitable for Rapid Development) ==========
 func Debugw(msg string, keysAndValues ...interface{}) { Sugar().Debugw(msg, keysAndValues...) }
 func Infow(msg string, keysAndValues ...interface{})  { Sugar().Infow(msg, keysAndValues...) }
 func Warnw(msg string, keysAndValues ...interface{})  { Sugar().Warnw(msg, keysAndValues...) }
@@ -38,7 +38,7 @@ func Errorw(msg string, keysAndValues ...interface{}) { Sugar().Errorw(msg, keys
 func Panicw(msg string, keysAndValues ...interface{}) { Sugar().Panicw(msg, keysAndValues...) }
 func Fatalw(msg string, keysAndValues ...interface{}) { Sugar().Fatalw(msg, keysAndValues...) }
 
-// ========== 格式化日志（兼容 fmt 风格）==========
+// ========== Formatted Logging (fmt Style Compatible) ==========
 func Debugf(format string, args ...interface{}) { Sugar().Debugf(format, args...) }
 func Infof(format string, args ...interface{})  { Sugar().Infof(format, args...) }
 func Warnf(format string, args ...interface{})  { Sugar().Warnf(format, args...) }

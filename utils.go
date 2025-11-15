@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// toZapFields 将 zlog.Field 转为 zap.Field
+// toZapFields converts zlog.Field to zap.Field
 func toZapFields(fields []Field) []zap.Field {
 	if len(fields) == 0 {
 		return nil

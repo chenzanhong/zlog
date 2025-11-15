@@ -2,7 +2,7 @@ package zlog
 
 import "go.uber.org/zap/zapcore"
 
-// Level 表示日志级别，对外隐藏 zapcore.Level
+// Level represents log level, hiding zapcore.Level internally
 type Level int
 
 const (
@@ -14,7 +14,7 @@ const (
 	FatalLevel
 )
 
-// String 返回可读的级别名称
+// String returns human-readable level name
 func (l Level) String() string {
 	switch l {
 	case DebugLevel:
@@ -34,7 +34,7 @@ func (l Level) String() string {
 	}
 }
 
-// toZapCoreLevel 转换为 zapcore.Level（内部使用）
+// toZapCoreLevel converts to zapcore.Level (internal use)
 func (l Level) toZapCoreLevel() zapcore.Level {
 	switch l {
 	case DebugLevel:
@@ -54,7 +54,7 @@ func (l Level) toZapCoreLevel() zapcore.Level {
 	}
 }
 
-// fromZapCoreLevel 从 zapcore.Level 转换回来（如需要）
+// fromZapCoreLevel converts from zapcore.Level (if needed)
 func fromZapCoreLevel(l zapcore.Level) Level {
 	switch l {
 	case zapcore.DebugLevel:
