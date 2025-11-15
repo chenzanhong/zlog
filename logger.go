@@ -2,7 +2,6 @@ package zlog
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -31,14 +30,7 @@ func NewLogger(config *LoggerConfig) (*zap.Logger, error) {
 	}
 
 	// 设置日志级别
-	level := zapcore.InfoLevel
-	if config.Level != "" {
-		var err error
-		level, err = zapcore.ParseLevel(config.Level)
-		if err != nil {
-			log.Printf("无效的日志级别 %s，使用默认级别 info", config.Level)
-		}
-	}
+	level := config.Level.toZapCoreLevel()
 
 	// 配置编码器
 	encoderConfig := zapcore.EncoderConfig{
@@ -201,27 +193,10 @@ func Sugar() *zap.SugaredLogger {
 
 // InitLoggerDefault 使用默认配置
 func InitDefault() error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("获取当前工作目录失败: %w", err)
-	}
-	// 日志文件默认路径
-	defaultLogFilePath := filepath.Join(wd, "logs", "app.log")
-
 	// 使用默认配置初始化
-	config := &LoggerConfig{
-		Level:      "info",
-		Output:     "both",    // 默认为同时输出到文件和控制台
-		Format:     "console", // 默认为控制台格式
-		FilePath:   defaultLogFilePath,
-		MaxSize:    20,
-		MaxBackups: 5,
-		MaxAge:     60,
-		Compress:   false,
-		Sampling:   false,
-	}
+	config := defaultConfig()
 
-	err = InitLogger(config)
+	err := InitLogger(config)
 	if err != nil {
 		return fmt.Errorf("日志系统初始化失败: %w", err)
 	}

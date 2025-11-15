@@ -7,15 +7,15 @@ import (
 )
 
 type LoggerConfig struct {
-	Level      string
-	Output     string // "console", "file", "both"
-	Format     string // "json", "console"
-	FilePath   string
-	MaxSize    int
-	MaxBackups int
-	MaxAge     int
-	Compress   bool
-	Sampling   bool
+	Level      Level `yaml:"level"`
+	Output     string `yaml:"output"`
+	Format     string `yaml:"format"`
+	FilePath   string `yaml:"file_path"`
+	MaxSize    int    `yaml:"max_size"`
+	MaxBackups int    `yaml:"max_backups"`
+	MaxAge     int    `yaml:"max_age"`
+	Compress   bool   `yaml:"compress"`
+	Sampling   bool   `yaml:"sampling"`
 }
 
 func (c *LoggerConfig) validate() error {
@@ -61,7 +61,7 @@ func getEnvBool(key string, defaultValue bool) bool {
 
 func defaultConfig() *LoggerConfig {
 	return &LoggerConfig{
-		Level:      "info",
+		Level:      InfoLevel,
 		Output:     "console",
 		Format:     "console",
 		FilePath:   "",
