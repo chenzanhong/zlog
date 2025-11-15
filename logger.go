@@ -14,14 +14,15 @@ import (
 
 // Global instances (for backward compatibility)
 var (
-	globalLogger *zap.Logger
-	globalSugar  *zap.SugaredLogger
-	once         sync.Once
+	globalLogger        *zap.Logger
+	globalSugaredLogger *zap.SugaredLogger
+	once                sync.Once
 )
 
-// NewLogger creates a new zap.Logger instance with automatic config validation,
+// newLogger creates a new zap.Logger instance with automatic config validation,
 // default value filling, and path resolution.
-func NewLogger(config LoggerConfig) (*zap.Logger, error) {
+// internal helper, not exported
+func newLogger(config LoggerConfig) (*zap.Logger, error) {
 	cfg := config
 
 	// Normalize log level
@@ -129,7 +130,7 @@ func NewLogger(config LoggerConfig) (*zap.Logger, error) {
 	core := zapcore.NewTee(cores...)
 	options := []zap.Option{
 		zap.AddCaller(),
-		zap.AddCallerSkip(0),
+		zap.AddCallerSkip(1),
 		zap.AddStacktrace(zapcore.ErrorLevel),
 		zap.ErrorOutput(zapcore.Lock(os.Stderr)),
 	}
@@ -142,14 +143,6 @@ func NewLogger(config LoggerConfig) (*zap.Logger, error) {
 
 	logger := zap.New(core, options...)
 
-	// Optional: log initialization info (note: logger is already usable here)
-	logger.Info("Logger initialized",
-		zap.String("level", cfg.Level.String()),
-		zap.String("output", cfg.Output),
-		zap.String("format", cfg.Format),
-		zap.String("file_path", cfg.FilePath),
-	)
-
 	return logger, nil
 }
 
@@ -157,9 +150,10 @@ func NewLogger(config LoggerConfig) (*zap.Logger, error) {
 func InitLogger(config LoggerConfig) error {
 	var err error
 	once.Do(func() {
-		globalLogger, err = NewLogger(config)
+		globalLogger, err = newLogger(config)
 		if err == nil {
-			globalSugar = globalLogger.Sugar()
+			globalSugaredLogger = globalLogger.Sugar()
+			globalLogger = globalLogger.WithOptions(zap.AddCallerSkip(1))
 		}
 	})
 	return err
@@ -169,9 +163,10 @@ func InitLogger(config LoggerConfig) error {
 func Logger() *zap.Logger {
 	if globalLogger == nil {
 		once.Do(func() {
-			cfg := defaultConfig()
-			globalLogger, _ = NewLogger(cfg)
-			globalSugar = globalLogger.Sugar()
+			cfg := DefaultConfig()
+			globalLogger, _ = newLogger(cfg)
+			globalSugaredLogger = globalLogger.Sugar()
+			globalLogger = globalLogger.WithOptions(zap.AddCallerSkip(1))
 		})
 	}
 	return globalLogger
@@ -180,12 +175,12 @@ func Logger() *zap.Logger {
 // Sugar returns global SugaredLogger
 func Sugar() *zap.SugaredLogger {
 	_ = Logger() // Trigger initialization
-	return globalSugar
+	return globalSugaredLogger
 }
 
 // InitDefault initializes with default configuration
 func InitDefault() error {
-	return InitLogger(defaultConfig())
+	return InitLogger(DefaultConfig())
 }
 
 // MustInitDefault panics if default logger fails to initialize.

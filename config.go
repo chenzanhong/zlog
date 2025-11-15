@@ -2,12 +2,10 @@ package zlog
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 )
 
 type LoggerConfig struct {
-	Level      Level `yaml:"level"`
+	Level      Level  `yaml:"level"`
 	Output     string `yaml:"output"`
 	Format     string `yaml:"format"`
 	FilePath   string `yaml:"file_path"`
@@ -18,7 +16,7 @@ type LoggerConfig struct {
 	Sampling   bool   `yaml:"sampling"`
 }
 
-func (c *LoggerConfig) validate() error {
+func (c *LoggerConfig) Validate() error {
 	if c.MaxSize <= 0 {
 		c.MaxSize = 100
 	}
@@ -34,32 +32,7 @@ func (c *LoggerConfig) validate() error {
 	return nil
 }
 
-func getEnv(key, defaultValue string) string {
-	if v, ok := os.LookupEnv(key); ok {
-		return v
-	}
-	return defaultValue
-}
-
-func getEnvInt(key string, defaultValue int) int {
-	if v, ok := os.LookupEnv(key); ok {
-		if i, err := strconv.Atoi(v); err == nil {
-			return i
-		}
-	}
-	return defaultValue
-}
-
-func getEnvBool(key string, defaultValue bool) bool {
-	if v, ok := os.LookupEnv(key); ok {
-		if b, err := strconv.ParseBool(v); err == nil {
-			return b
-		}
-	}
-	return defaultValue
-}
-
-func defaultConfig() LoggerConfig {
+func DefaultConfig() LoggerConfig {
 	return LoggerConfig{
 		Level:      InfoLevel,
 		Output:     "console",
