@@ -35,10 +35,6 @@ func loggerWithContext(ctx context.Context) *zap.Logger {
 	return logger
 }
 
-func InfoCtx(ctx context.Context, msg string, fields ...Field) {
-	logWithFieldsCtx(ctx, InfoLevel, msg, fields)
-}
-
 func logWithFieldsCtx(ctx context.Context, level Level, msg string, fields []Field) {
 	executeHooks(level, msg, fields)
 
@@ -61,12 +57,20 @@ func DebugCtx(ctx context.Context, msg string, fields ...Field) {
 	logWithFieldsCtx(ctx, DebugLevel, msg, fields)
 }
 
+func InfoCtx(ctx context.Context, msg string, fields ...Field) {
+	logWithFieldsCtx(ctx, InfoLevel, msg, fields)
+}
+
 func WarnCtx(ctx context.Context, msg string, fields ...Field) {
 	logWithFieldsCtx(ctx, WarnLevel, msg, fields)
 }
 
 func ErrorCtx(ctx context.Context, msg string, fields ...Field) {
 	logWithFieldsCtx(ctx, ErrorLevel, msg, fields)
+}
+
+func PanicCtx(ctx context.Context, msg string, fields ...Field) {
+	logWithFieldsCtx(ctx, PanicLevel, msg, fields)
 }
 
 func FatalCtx(ctx context.Context, msg string, fields ...Field) {
