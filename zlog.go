@@ -13,20 +13,19 @@ func logWithFields(level Level, msg string, fields []Field) {
 	executeHooks(level, msg, fields)
 
 	logger := Logger()
-	zapFields := toZapFields(fields)
 	switch level {
 	case DebugLevel:
-		logger.Debug(msg, zapFields...)
+		logger.Debug(msg, fields...)
 	case InfoLevel:
-		logger.Info(msg, zapFields...)
+		logger.Info(msg, fields...)
 	case WarnLevel:
-		logger.Warn(msg, zapFields...)
+		logger.Warn(msg, fields...)
 	case ErrorLevel:
-		logger.Error(msg, zapFields...)
+		logger.Error(msg, fields...)
 	case PanicLevel:
-		logger.Panic(msg, zapFields...)
+		logger.Panic(msg, fields...)
 	case FatalLevel:
-		logger.Fatal(msg, zapFields...)
+		logger.Fatal(msg, fields...)
 	}
 }
 

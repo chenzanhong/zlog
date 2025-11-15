@@ -7,5 +7,6 @@ func main(){
 	zlog.InitDefault()
 	zlog.Info("ok")
 	zlog.Infof("hello %s", "czh")
-	zlog.Warnw("hello", "a","b")
+	zlog.Panicw("hello", "a","b")
+	zlog.Infof("hello %s", "czh")
 }
