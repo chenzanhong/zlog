@@ -6,8 +6,8 @@ import (
 
 type LoggerConfig struct {
 	Level      Level  `yaml:"level"`
-	Output     string `yaml:"output"`
-	Format     string `yaml:"format"`
+	Output     string `yaml:"output"` // file、console、both
+	Format     string `yaml:"format"` // json、console
 	FilePath   string `yaml:"file_path"`
 	MaxSize    int    `yaml:"max_size"`
 	MaxBackups int    `yaml:"max_backups"`

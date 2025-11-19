@@ -118,7 +118,13 @@ func newLogger(config LoggerConfig) (*zap.Logger, error) {
 			MaxAge:     cfg.MaxAge,
 			Compress:   cfg.Compress,
 		}
-		enc := zapcore.NewJSONEncoder(encoderConfig)
+		var enc zapcore.Encoder
+		consoleEncCfg := encoderConfig
+		if cfg.Format == "json" {
+			enc = zapcore.NewJSONEncoder(consoleEncCfg)
+		} else {
+			enc = zapcore.NewConsoleEncoder(consoleEncCfg)
+		}
 		cores = append(cores, zapcore.NewCore(enc, zapcore.AddSync(writer), zapLevel))
 	}
 
