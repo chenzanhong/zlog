@@ -5,15 +5,16 @@ import (
 )
 
 type LoggerConfig struct {
-	Level      Level  `yaml:"level"`
-	Output     string `yaml:"output"` // file、console、both
-	Format     string `yaml:"format"` // json、console
-	FilePath   string `yaml:"file_path"`
-	MaxSize    int    `yaml:"max_size"`
-	MaxBackups int    `yaml:"max_backups"`
-	MaxAge     int    `yaml:"max_age"`
-	Compress   bool   `yaml:"compress"`
-	Sampling   bool   `yaml:"sampling"`
+	Level      Level             `yaml:"level"`
+	Output     string            `yaml:"output"` // file、console、both
+	Format     string            `yaml:"format"` // json、console
+	FilePath   string            `yaml:"file_path"`
+	MaxSize    int               `yaml:"max_size"`
+	MaxBackups int               `yaml:"max_backups"`
+	MaxAge     int               `yaml:"max_age"`
+	Compress   bool              `yaml:"compress"`
+	Sampling   bool              `yaml:"sampling"`
+	Fields     map[string]string `yaml:"fields"` // 添加固定键值对
 }
 
 func (c *LoggerConfig) Validate() error {
@@ -43,5 +44,6 @@ func DefaultConfig() LoggerConfig {
 		MaxAge:     30, // days
 		Compress:   true,
 		Sampling:   false,
+		Fields:     map[string]string{}, // 添加固定键值对
 	}
 }
