@@ -109,7 +109,7 @@ func newLogger(config LoggerConfig) (*zap.Logger, error) {
 		cores = append(cores, zapcore.NewCore(enc, zapcore.Lock(os.Stdout), zapLevel))
 	}
 
-	// File output (always JSON)
+	// File output
 	if cfg.Output == "file" || cfg.Output == "both" {
 		writer := &lumberjack.Logger{
 			Filename:   cfg.FilePath,
